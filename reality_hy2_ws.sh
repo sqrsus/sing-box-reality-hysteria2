@@ -716,7 +716,7 @@ if [ -f "/root/sbox/sbconfig_server.json" ] && [ -f "/root/sbox/sing-box" ] && [
 	esac
 	fi
 
-mkdir -p "/root/sbox/"
+mkdir -p "/home/cdplus/sbox/"
 
 download_singbox
 
