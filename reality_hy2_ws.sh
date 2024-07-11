@@ -51,16 +51,16 @@ regenarte_cloudflared_argo(){
     kill "$pid"
   fi
 
-  vmess_port=$(jq -r '.inbounds[2].listen_port' /root/sbox/sbconfig_server.json)
+  vmess_port=$(jq -r '.inbounds[2].listen_port' /home/rsus/sbox/sbconfig_server.json)
   #生成地址
-  /root/sbox/cloudflared-linux tunnel --url http://localhost:$vmess_port --no-autoupdate --edge-ip-version auto --protocol h2mux>argo.log 2>&1 &
+  /home/rsus/sbox/cloudflared-linux tunnel --url http://localhost:$vmess_port --no-autoupdate --edge-ip-version auto --protocol h2mux>argo.log 2>&1 &
   sleep 2
   clear
   echo 等待cloudflare argo生成地址
   sleep 5
   #连接到域名
   argo=$(cat argo.log | grep trycloudflare.com | awk 'NR==2{print}' | awk -F// '{print $2}' | awk '{print $1}')
-  echo "$argo" | base64 > /root/sbox/argo.txt.b64
+  echo "$argo" | base64 > /home/rsus/sbox/argo.txt.b64
   rm -rf argo.log
 
   }
@@ -93,18 +93,18 @@ download_singbox(){
   # Prepare download URL
   url="https://github.com/SagerNet/sing-box/releases/download/${latest_version_tag}/${package_name}.tar.gz"
   # Download the latest release package (.tar.gz) from GitHub
-  curl -sLo "/root/${package_name}.tar.gz" "$url"
+  curl -sLo "/home/rsus/${package_name}.tar.gz" "$url"
 
-  # Extract the package and move the binary to /root
-  tar -xzf "/root/${package_name}.tar.gz" -C /root
-  mv "/root/${package_name}/sing-box" /root/sbox
+  # Extract the package and move the binary to /home/rsus
+  tar -xzf "/home/rsus/${package_name}.tar.gz" -C /home/rsus
+  mv "/home/rsus/${package_name}/sing-box" /home/rsus/sbox
 
   # Cleanup the package
-  rm -r "/root/${package_name}.tar.gz" "/root/${package_name}"
+  rm -r "/home/rsus/${package_name}.tar.gz" "/home/rsus/${package_name}"
 
   # Set the permissions
-  chown root:root /root/sbox/sing-box
-  chmod +x /root/sbox/sing-box
+  chown /home/rsus:/home/rsus /home/rsus/sbox/sing-box
+  chmod +x /home/rsus/sbox/sing-box
 }
 
 # download singbox and cloudflared
@@ -125,8 +125,8 @@ download_cloudflared(){
 
   # install cloudflared linux
   cf_url="https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-${cf_arch}"
-  curl -sLo "/root/sbox/cloudflared-linux" "$cf_url"
-  chmod +x /root/sbox/cloudflared-linux
+  curl -sLo "/home/rsus/sbox/cloudflared-linux" "$cf_url"
+  chmod +x /home/rsus/sbox/cloudflared-linux
   echo ""
 }
 
@@ -134,15 +134,15 @@ download_cloudflared(){
 # client configuration
 show_client_configuration() {
   # Get current listen port
-  current_listen_port=$(jq -r '.inbounds[0].listen_port' /root/sbox/sbconfig_server.json)
+  current_listen_port=$(jq -r '.inbounds[0].listen_port' /home/rsus/sbox/sbconfig_server.json)
   # Get current server name
-  current_server_name=$(jq -r '.inbounds[0].tls.server_name' /root/sbox/sbconfig_server.json)
+  current_server_name=$(jq -r '.inbounds[0].tls.server_name' /home/rsus/sbox/sbconfig_server.json)
   # Get the UUID
-  uuid=$(jq -r '.inbounds[0].users[0].uuid' /root/sbox/sbconfig_server.json)
+  uuid=$(jq -r '.inbounds[0].users[0].uuid' /home/rsus/sbox/sbconfig_server.json)
   # Get the public key from the file, decoding it from base64
-  public_key=$(base64 --decode /root/sbox/public.key.b64)
+  public_key=$(base64 --decode /home/rsus/sbox/public.key.b64)
   # Get the short ID
-  short_id=$(jq -r '.inbounds[0].tls.reality.short_id[0]' /root/sbox/sbconfig_server.json)
+  short_id=$(jq -r '.inbounds[0].tls.reality.short_id[0]' /home/rsus/sbox/sbconfig_server.json)
   # Retrieve the server IP address
   server_ip=$(curl -s4m8 ip.sb -k) || server_ip=$(curl -s6m8 ip.sb -k)
   echo ""
@@ -169,11 +169,11 @@ show_client_configuration() {
   echo ""
   echo ""
   # Get current listen port
-  hy_current_listen_port=$(jq -r '.inbounds[1].listen_port' /root/sbox/sbconfig_server.json)
+  hy_current_listen_port=$(jq -r '.inbounds[1].listen_port' /home/rsus/sbox/sbconfig_server.json)
   # Get current server name
-  hy_current_server_name=$(openssl x509 -in /root/self-cert/cert.pem -noout -subject -nameopt RFC2253 | awk -F'=' '{print $NF}')
+  hy_current_server_name=$(openssl x509 -in /home/rsus/self-cert/cert.pem -noout -subject -nameopt RFC2253 | awk -F'=' '{print $NF}')
   # Get the password
-  hy_password=$(jq -r '.inbounds[1].users[0].password' /root/sbox/sbconfig_server.json)
+  hy_password=$(jq -r '.inbounds[1].users[0].password' /home/rsus/sbox/sbconfig_server.json)
   # Generate the link
   
   hy2_server_link="hysteria2://$hy_password@$server_ip:$hy_current_listen_port?insecure=1&sni=$hy_current_server_name"
@@ -219,9 +219,9 @@ socks5:
 
 EOF
 
-  argo=$(base64 --decode /root/sbox/argo.txt.b64)
-  vmess_uuid=$(jq -r '.inbounds[2].users[0].uuid' /root/sbox/sbconfig_server.json)
-  ws_path=$(jq -r '.inbounds[2].transport.path' /root/sbox/sbconfig_server.json)
+  argo=$(base64 --decode /home/rsus/sbox/argo.txt.b64)
+  vmess_uuid=$(jq -r '.inbounds[2].users[0].uuid' /home/rsus/sbox/sbconfig_server.json)
+  ws_path=$(jq -r '.inbounds[2].transport.path' /home/rsus/sbox/sbconfig_server.json)
   show_notice "vmess ws 通用链接参数" 
   echo ""
   echo ""
@@ -595,21 +595,21 @@ uninstall_singbox() {
 
           # Remove files
           rm /etc/systemd/system/sing-box.service
-          rm /root/sbox/sbconfig_server.json
-          rm /root/sbox/sing-box
-          rm /root/sbox/cloudflared-linux
-          rm /root/sbox/argo.txt.b64
-          rm /root/sbox/public.key.b64
-          rm /root/self-cert/private.key
-          rm /root/self-cert/cert.pem
-          rm -rf /root/self-cert/
-          rm -rf /root/sbox/
+          rm /home/rsus/sbox/sbconfig_server.json
+          rm /home/rsus/sbox/sing-box
+          rm /home/rsus/sbox/cloudflared-linux
+          rm /home/rsus/sbox/argo.txt.b64
+          rm /home/rsus/sbox/public.key.b64
+          rm /home/rsus/self-cert/private.key
+          rm /home/rsus/self-cert/cert.pem
+          rm -rf /home/rsus/self-cert/
+          rm -rf /home/rsus/sbox/
           echo "DONE!"
 }
 install_base
 
 # Check if reality.json, sing-box, and sing-box.service already exist
-if [ -f "/root/sbox/sbconfig_server.json" ] && [ -f "/root/sbox/sing-box" ] && [ -f "/root/sbox/public.key.b64" ] && [ -f "/root/sbox/argo.txt.b64" ] && [ -f "/etc/systemd/system/sing-box.service" ]; then
+if [ -f "/home/rsus/sbox/sbconfig_server.json" ] && [ -f "/home/rsus/sbox/sing-box" ] && [ -f "/home/rsus/sbox/public.key.b64" ] && [ -f "/home/rsus/sbox/argo.txt.b64" ] && [ -f "/etc/systemd/system/sing-box.service" ]; then
 
     echo "sing-box-reality-hysteria2已经安装"
     echo ""
@@ -631,15 +631,15 @@ if [ -f "/root/sbox/sbconfig_server.json" ] && [ -f "/root/sbox/sing-box" ] && [
           systemctl stop sing-box
           systemctl disable sing-box > /dev/null 2>&1
           rm /etc/systemd/system/sing-box.service
-          rm /root/sbox/sbconfig_server.json
-          rm /root/sbox/sing-box
-          rm /root/sbox/cloudflared-linux
-          rm /root/sbox/argo.txt.b64
-          rm /root/sbox/public.key.b64
-          rm /root/self-cert/private.key
-          rm /root/self-cert/cert.pem
-          rm -rf /root/self-cert/
-          rm -rf /root/sbox/
+          rm /home/rsus/sbox/sbconfig_server.json
+          rm /home/rsus/sbox/sing-box
+          rm /home/rsus/sbox/cloudflared-linux
+          rm /home/rsus/sbox/argo.txt.b64
+          rm /home/rsus/sbox/public.key.b64
+          rm /home/rsus/self-cert/private.key
+          rm /home/rsus/self-cert/cert.pem
+          rm -rf /home/rsus/self-cert/
+          rm -rf /home/rsus/sbox/
           
           # Proceed with installation
         ;;
@@ -647,14 +647,14 @@ if [ -f "/root/sbox/sbconfig_server.json" ] && [ -f "/root/sbox/sing-box" ] && [
           #Reality modify
           show_notice "开始修改reality端口和域名"
           # Get current listen port
-          current_listen_port=$(jq -r '.inbounds[0].listen_port' /root/sbox/sbconfig_server.json)
+          current_listen_port=$(jq -r '.inbounds[0].listen_port' /home/rsus/sbox/sbconfig_server.json)
 
           # Ask for listen port
           read -p "请输入想要修改的端口号 (当前端口为 $current_listen_port): " listen_port
           listen_port=${listen_port:-$current_listen_port}
 
           # Get current server name
-          current_server_name=$(jq -r '.inbounds[0].tls.server_name' /root/sbox/sbconfig_server.json)
+          current_server_name=$(jq -r '.inbounds[0].tls.server_name' /home/rsus/sbox/sbconfig_server.json)
 
           # Ask for server name (sni)
           read -p "请输入想要使用的h2域名 (当前域名为 $current_server_name): " server_name
@@ -664,15 +664,15 @@ if [ -f "/root/sbox/sbconfig_server.json" ] && [ -f "/root/sbox/sing-box" ] && [
           show_notice "开始修改hysteria2端口"
           echo ""
           # Get current listen port
-          hy_current_listen_port=$(jq -r '.inbounds[1].listen_port' /root/sbox/sbconfig_server.json)
+          hy_current_listen_port=$(jq -r '.inbounds[1].listen_port' /home/rsus/sbox/sbconfig_server.json)
           
           # Ask for listen port
           read -p "请属于想要修改的端口 (当前端口为 $hy_current_listen_port): " hy_listen_port
           hy_listen_port=${hy_listen_port:-$hy_current_listen_port}
 
           # Modify reality.json with new settings
-          jq --arg listen_port "$listen_port" --arg server_name "$server_name" --arg hy_listen_port "$hy_listen_port" '.inbounds[1].listen_port = ($hy_listen_port | tonumber) | .inbounds[0].listen_port = ($listen_port | tonumber) | .inbounds[0].tls.server_name = $server_name | .inbounds[0].tls.reality.handshake.server = $server_name' /root/sbox/sbconfig_server.json > /root/sb_modified.json
-          mv /root/sb_modified.json /root/sbox/sbconfig_server.json
+          jq --arg listen_port "$listen_port" --arg server_name "$server_name" --arg hy_listen_port "$hy_listen_port" '.inbounds[1].listen_port = ($hy_listen_port | tonumber) | .inbounds[0].listen_port = ($listen_port | tonumber) | .inbounds[0].tls.server_name = $server_name | .inbounds[0].tls.reality.handshake.server = $server_name' /home/rsus/sbox/sbconfig_server.json > /home/rsus/sb_modified.json
+          mv /home/rsus/sb_modified.json /home/rsus/sbox/sbconfig_server.json
 
           # Restart sing-box service
           systemctl restart sing-box
@@ -693,7 +693,7 @@ if [ -f "/root/sbox/sbconfig_server.json" ] && [ -f "/root/sbox/sing-box" ] && [
           show_notice "Update Sing-box..."
           download_singbox
           # Check configuration and start the service
-          if /root/sbox/sing-box check -c /root/sbox/sbconfig_server.json; then
+          if /home/rsus/sbox/sing-box check -c /home/rsus/sbox/sbconfig_server.json; then
               echo "Configuration checked successfully. Starting sing-box service..."
               systemctl daemon-reload
               systemctl enable sing-box > /dev/null 2>&1
@@ -728,7 +728,7 @@ echo ""
 # Generate key pair
 echo "自动生成基本参数"
 echo ""
-key_pair=$(/root/sbox/sing-box generate reality-keypair)
+key_pair=$(/home/rsus/sbox/sing-box generate reality-keypair)
 echo "Key pair生成完成"
 echo ""
 
@@ -737,11 +737,11 @@ private_key=$(echo "$key_pair" | awk '/PrivateKey/ {print $2}' | tr -d '"')
 public_key=$(echo "$key_pair" | awk '/PublicKey/ {print $2}' | tr -d '"')
 
 # Save the public key in a file using base64 encoding
-echo "$public_key" | base64 > /root/sbox/public.key.b64
+echo "$public_key" | base64 > /home/rsus/sbox/public.key.b64
 
 # Generate necessary values
-uuid=$(/root/sbox/sing-box generate uuid)
-short_id=$(/root/sbox/sing-box generate rand --hex 8)
+uuid=$(/home/rsus/sbox/sing-box generate uuid)
+short_id=$(/home/rsus/sbox/sing-box generate rand --hex 8)
 echo "uuid和短id 生成完成"
 echo ""
 # Ask for listen port
@@ -756,7 +756,7 @@ echo ""
 echo "开始配置hysteria2"
 echo ""
 # Generate hysteria necessary values
-hy_password=$(/root/sbox/sing-box generate rand --hex 8)
+hy_password=$(/home/rsus/sbox/sing-box generate rand --hex 8)
 
 # Ask for listen port
 read -p "请输入hysteria2监听端口 (default: 8443): " hy_listen_port
@@ -766,7 +766,7 @@ echo ""
 # Ask for self-signed certificate domain
 read -p "输入自签证书域名 (default: bing.com): " hy_server_name
 hy_server_name=${hy_server_name:-bing.com}
-mkdir -p /root/self-cert/ && openssl ecparam -genkey -name prime256v1 -out /root/self-cert/private.key && openssl req -new -x509 -days 36500 -key /root/self-cert/private.key -out /root/self-cert/cert.pem -subj "/CN=${hy_server_name}"
+mkdir -p /home/rsus/self-cert/ && openssl ecparam -genkey -name prime256v1 -out /home/rsus/self-cert/private.key && openssl req -new -x509 -days 36500 -key /home/rsus/self-cert/private.key -out /home/rsus/self-cert/cert.pem -subj "/CN=${hy_server_name}"
 echo ""
 echo "自签证书生成完成"
 echo ""
@@ -774,12 +774,12 @@ echo ""
 echo "开始配置vmess"
 echo ""
 # Generate hysteria necessary values
-vmess_uuid=$(/root/sbox/sing-box generate uuid)
+vmess_uuid=$(/home/rsus/sbox/sing-box generate uuid)
 read -p "请输入vmess端口，默认为15555: " vmess_port
 vmess_port=${vmess_port:-15555}
 echo ""
 read -p "ws路径 (默认随机生成): " ws_path
-ws_path=${ws_path:-$(/root/sbox/sing-box generate rand --hex 6)}
+ws_path=${ws_path:-$(/home/rsus/sbox/sing-box generate rand --hex 6)}
 
 pid=$(pgrep -f cloudflared)
 if [ -n "$pid" ]; then
@@ -788,14 +788,14 @@ if [ -n "$pid" ]; then
 fi
 
 #生成地址
-/root/sbox/cloudflared-linux tunnel --url http://localhost:$vmess_port --no-autoupdate --edge-ip-version auto --protocol h2mux>argo.log 2>&1 &
+/home/rsus/sbox/cloudflared-linux tunnel --url http://localhost:$vmess_port --no-autoupdate --edge-ip-version auto --protocol h2mux>argo.log 2>&1 &
 sleep 2
 clear
 echo 等待cloudflare argo生成地址
 sleep 5
 #连接到域名
 argo=$(cat argo.log | grep trycloudflare.com | awk 'NR==2{print}' | awk -F// '{print $2}' | awk '{print $1}')
-echo "$argo" | base64 > /root/sbox/argo.txt.b64
+echo "$argo" | base64 > /home/rsus/sbox/argo.txt.b64
 rm -rf argo.log
 
 
@@ -850,8 +850,8 @@ jq -n --arg listen_port "$listen_port" --arg vmess_port "$vmess_port" --arg vmes
             "alpn": [
                 "h3"
             ],
-            "certificate_path": "/root/self-cert/cert.pem",
-            "key_path": "/root/self-cert/private.key"
+            "certificate_path": "/home/rsus/self-cert/cert.pem",
+            "key_path": "/home/rsus/self-cert/private.key"
         }
     },
     {
@@ -881,7 +881,7 @@ jq -n --arg listen_port "$listen_port" --arg vmess_port "$vmess_port" --arg vmes
       "tag": "block"
     }
   ]
-}' > /root/sbox/sbconfig_server.json
+}' > /home/rsus/sbox/sbconfig_server.json
 
 
 
@@ -891,11 +891,11 @@ cat > /etc/systemd/system/sing-box.service <<EOF
 After=network.target nss-lookup.target
 
 [Service]
-User=root
-WorkingDirectory=/root
+User=/home/rsus
+WorkingDirectory=/home/rsus
 CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE CAP_NET_RAW
 AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE CAP_NET_RAW
-ExecStart=/root/sbox/sing-box run -c /root/sbox/sbconfig_server.json
+ExecStart=/home/rsus/sbox/sing-box run -c /home/rsus/sbox/sbconfig_server.json
 ExecReload=/bin/kill -HUP \$MAINPID
 Restart=on-failure
 RestartSec=10
@@ -907,7 +907,7 @@ EOF
 
 
 # Check configuration and start the service
-if /root/sbox/sing-box check -c /root/sbox/sbconfig_server.json; then
+if /home/rsus/sbox/sing-box check -c /home/rsus/sbox/sbconfig_server.json; then
     echo "Configuration checked successfully. Starting sing-box service..."
     systemctl daemon-reload
     systemctl enable sing-box > /dev/null 2>&1
